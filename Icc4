@@ -1,0 +1,111 @@
+//@version=5
+indicator("ICC Trade Checklist [Brighton]", overlay=true, max_labels_count=10)
+
+dir = input.string("BUY", "Direction", options=["BUY", "SELL"])
+
+// BUY CONDITIONS
+grp_b = "BUY CONDITIONS"
+b1 = input.bool(false, "1. Daily/Weekly BULLISH", group=grp_b)
+b2 = input.bool(false, "2. 4H HH + HL structure", group=grp_b)
+b3 = input.bool(false, "3. 4H resistance broken - new HH", group=grp_b)
+b4 = input.bool(false, "4. Clean pullback - no new LL", group=grp_b)
+b5 = input.bool(false, "5. Higher Low confirmed", group=grp_b)
+b6 = input.bool(false, "6. 2nd resistance break - Cont HH", group=grp_b)
+b7 = input.bool(false, "7. 4H 1H 15M aligned BULLISH", group=grp_b)
+b8 = input.bool(false, "8. 15M entry above resistance", group=grp_b)
+
+// SELL CONDITIONS
+grp_s = "SELL CONDITIONS"
+s1 = input.bool(false, "1. Daily/Weekly BEARISH", group=grp_s)
+s2 = input.bool(false, "2. 4H LH + LL structure", group=grp_s)
+s3 = input.bool(false, "3. 4H support broken - new LL", group=grp_s)
+s4 = input.bool(false, "4. Clean pullback - no new HH", group=grp_s)
+s5 = input.bool(false, "5. Lower High confirmed", group=grp_s)
+s6 = input.bool(false, "6. 2nd support break - Cont LL", group=grp_s)
+s7 = input.bool(false, "7. 4H 1H 15M aligned BEARISH", group=grp_s)
+s8 = input.bool(false, "8. 15M entry below support", group=grp_s)
+
+// SCORE
+b_sum = (b1?1:0) + (b2?1:0) + (b3?1:0) + (b4?1:0) + (b5?1:0) + (b6?1:0) + (b7?1:0) + (b8?1:0)
+s_sum = (s1?1:0) + (s2?1:0) + (s3?1:0) + (s4?1:0) + (s5?1:0) + (s6?1:0) + (s7?1:0) + (s8?1:0)
+
+sc = dir == "BUY" ? b_sum : s_sum
+
+// GRADE
+gr = sc == 8 ? "A" : sc >= 6 ? "B" : sc >= 4 ? "C" : "D"
+gc = gr == "A" ? color.new(#00e676,0) :
+     gr == "B" ? color.new(#ffeb3b,0) :
+     gr == "C" ? color.new(#ff9800,0) :
+                 color.new(#f44336,0)
+
+// TABLE
+var table t = table.new(position.top_right, 2, 13,
+     bgcolor=color.new(#0d1117,10),
+     border_color=color.new(#30363d,80),
+     border_width=1,
+     frame_color=color.new(#58a6ff,60),
+     frame_width=2)
+
+// DRAW EVERYTHING ON LAST BAR
+if barstate.islast
+
+    table.cell(t, 0, 0, dir == "BUY" ? "BUY CHECKLIST" : "SELL CHECKLIST",
+        text_color=color.new(#58a6ff,0), bgcolor=color.new(#161b22,0))
+    table.merge_cells(t, 0, 0, 1, 0)
+
+    if dir == "BUY"
+        table.cell(t, 0, 1, b1?"YES":"NO", text_color=b1?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 1, "Daily/Weekly BULLISH")
+        table.cell(t, 0, 2, b2?"YES":"NO", text_color=b2?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 2, "4H HH + HL structure")
+        table.cell(t, 0, 3, b3?"YES":"NO", text_color=b3?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 3, "4H resistance broken - new HH")
+        table.cell(t, 0, 4, b4?"YES":"NO", text_color=b4?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 4, "Clean pullback - no new LL")
+        table.cell(t, 0, 5, b5?"YES":"NO", text_color=b5?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 5, "Higher Low confirmed")
+        table.cell(t, 0, 6, b6?"YES":"NO", text_color=b6?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 6, "2nd resistance break - Cont HH")
+        table.cell(t, 0, 7, b7?"YES":"NO", text_color=b7?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 7, "4H 1H 15M aligned BULLISH")
+        table.cell(t, 0, 8, b8?"YES":"NO", text_color=b8?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 8, "15M entry above resistance")
+    else
+        table.cell(t, 0, 1, s1?"YES":"NO", text_color=s1?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 1, "Daily/Weekly BEARISH")
+        table.cell(t, 0, 2, s2?"YES":"NO", text_color=s2?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 2, "4H LH + LL structure")
+        table.cell(t, 0, 3, s3?"YES":"NO", text_color=s3?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 3, "4H support broken - new LL")
+        table.cell(t, 0, 4, s4?"YES":"NO", text_color=s4?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 4, "Clean pullback - no new HH")
+        table.cell(t, 0, 5, s5?"YES":"NO", text_color=s5?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 5, "Lower High confirmed")
+        table.cell(t, 0, 6, s6?"YES":"NO", text_color=s6?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 6, "2nd support break - Cont LL")
+        table.cell(t, 0, 7, s7?"YES":"NO", text_color=s7?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 7, "4H 1H 15M aligned BEARISH")
+        table.cell(t, 0, 8, s8?"YES":"NO", text_color=s8?color.new(#00e676,0):color.new(#f44336,0))
+        table.cell(t, 1, 8, "15M entry below support")
+
+    table.cell(t, 0, 9, "Score")
+    table.cell(t, 1, 9, str.tostring(sc) + " / 8")
+
+    table.cell(t, 0, 10, "Grade")
+    table.cell(t, 1, 10, " " + gr + " ", bgcolor=gc, text_color=color.black)
+
+    table.cell(t, 0, 11, "A=8  B=6-7  C=4-5  D<4")
+    table.merge_cells(t, 0, 11, 1, 11)
+
+    table.cell(t, 0, 12, gr == "D" ? "NO TRADE" : "")
+    table.merge_cells(t, 0, 12, 1, 12)
+
+    label.new(bar_index, high * 1.001,
+        text=dir + " - Grade " + gr + " (" + str.tostring(sc) + "/8)",
+        color=gc, textcolor=color.black)
+
+// ALERTS
+alertcondition(dir == "BUY" and b_sum >= 6, "BUY Grade A/B", "ICC BUY graded A/B")
+alertcondition(dir == "SELL" and s_sum >= 6, "SELL Grade A/B", "ICC SELL graded A/B")
+alertcondition(dir == "BUY" and b_sum == 8, "BUY Perfect", "ICC BUY all conditions met")
+alertcondition(dir == "SELL" and s_sum == 8, "SELL Perfect", "ICC SELL all conditions met")
