@@ -1,4 +1,4 @@
-//@version=5
+//@version=6
 indicator("ICC Trade Checklist [Brighton]", overlay=true, max_labels_count=10)
 
 // INPUTS - DIRECTION
