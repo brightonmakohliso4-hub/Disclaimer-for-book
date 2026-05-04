@@ -1,0 +1,158 @@
+//@version=5
+indicator("ICC Trade Checklist [Brighton]", overlay=true, max_labels_count=10)
+
+// ─────────────────────────────────────────────
+//  INPUTS — DIRECTION
+// ─────────────────────────────────────────────
+dir = input.string("BUY", "Direction", options=["BUY", "SELL"])
+
+// ─────────────────────────────────────────────
+//  BUY CHECKLIST INPUTS
+// ─────────────────────────────────────────────
+grp_b = "🟢 BUY CONDITIONS"
+
+b1 = input.bool(false, "1. Daily/Weekly trend is BULLISH",              group=grp_b)
+b2 = input.bool(false, "2. 4H structure: HH + HL confirmed",            group=grp_b)
+b3 = input.bool(false, "3. 4H resistance BROKEN → new HH formed",       group=grp_b)
+b4 = input.bool(false, "4. Clean pullback occurred (no new LL)",         group=grp_b)
+b5 = input.bool(false, "5. Higher Low (HL) held / confirmed",            group=grp_b)
+b6 = input.bool(false, "6. Resistance broken again → 2nd HH (Cont.)",   group=grp_b)
+b7 = input.bool(false, "7. 4H / 1H / 15M all aligned BULLISH",          group=grp_b)
+b8 = input.bool(false, "8. 15M entry trigger: break above resistance",   group=grp_b)
+
+// ─────────────────────────────────────────────
+//  SELL CHECKLIST INPUTS
+// ─────────────────────────────────────────────
+grp_s = "🔴 SELL CONDITIONS"
+
+s1 = input.bool(false, "1. Daily/Weekly trend is BEARISH",               group=grp_s)
+s2 = input.bool(false, "2. 4H structure: LH + LL confirmed",             group=grp_s)
+s3 = input.bool(false, "3. 4H support BROKEN → new LL formed",           group=grp_s)
+s4 = input.bool(false, "4. Clean pullback occurred (no new HH)",          group=grp_s)
+s5 = input.bool(false, "5. Lower High (LH) held / confirmed",             group=grp_s)
+s6 = input.bool(false, "6. Support broken again → 2nd LL (Cont.)",        group=grp_s)
+s7 = input.bool(false, "7. 4H / 1H / 15M all aligned BEARISH",           group=grp_s)
+s8 = input.bool(false, "8. 15M entry trigger: break below support",       group=grp_s)
+
+// ─────────────────────────────────────────────
+//  GRADING LOGIC
+// ─────────────────────────────────────────────
+
+// Score = number of conditions met
+buy_score  = (b1 ? 1 : 0) + (b2 ? 1 : 0) + (b3 ? 1 : 0) + (b4 ? 1 : 0) +
+             (b5 ? 1 : 0) + (b6 ? 1 : 0) + (b7 ? 1 : 0) + (b8 ? 1 : 0)
+
+sell_score = (s1 ? 1 : 0) + (s2 ? 1 : 0) + (s3 ? 1 : 0) + (s4 ? 1 : 0) +
+             (s5 ? 1 : 0) + (s6 ? 1 : 0) + (s7 ? 1 : 0) + (s8 ? 1 : 0)
+
+// Which score is active based on direction
+active_score = dir == "BUY" ? buy_score : sell_score
+
+// Grade thresholds (out of 8):
+//   A = 8   (all conditions)
+//   B = 6–7 (strong, minor gap)
+//   C = 4–5 (partial — review carefully)
+//   D = 0–3 (no trade)
+grade = active_score == 8 ? "A" :
+        active_score >= 6 ? "B" :
+        active_score >= 4 ? "C" : "D"
+
+grade_color = grade == "A" ? color.new(#00e676, 0) :
+              grade == "B" ? color.new(#ffeb3b, 0) :
+              grade == "C" ? color.new(#ff9800, 0) :
+                             color.new(#f44336, 0)
+
+// ─────────────────────────────────────────────
+//  TABLE DISPLAY
+// ─────────────────────────────────────────────
+var table t = table.new(position.top_right, 2, 13,
+     bgcolor       = color.new(#0d1117, 10),
+     border_color  = color.new(#30363d, 80),
+     border_width  = 1,
+     frame_color   = color.new(#58a6ff, 60),
+     frame_width   = 2)
+
+// Helper: tick/cross cell
+f_row(row, label, done) =>
+    tick = done ? "✅" : "☐"
+    clr  = done ? color.new(#c3e6cb, 0) : color.new(#6e7681, 0)
+    table.cell(t, 0, row, tick,  text_color=clr,                      text_size=size.small, bgcolor=color.new(#0d1117,10))
+    table.cell(t, 1, row, label, text_color=color.new(#e6edf3, 0),    text_size=size.small, bgcolor=color.new(#0d1117,10))
+
+if barstate.islast
+    // Header
+    header_txt = dir == "BUY" ? "🟢  BUY CHECKLIST" : "🔴  SELL CHECKLIST"
+    table.cell(t, 0, 0, header_txt, text_color=color.new(#58a6ff,0), text_size=size.normal,
+         text_halign=text.align_left, bgcolor=color.new(#161b22,0), tooltip="ICC Framework — Brighton")
+    table.merge_cells(t, 0, 0, 1, 0)
+
+    if dir == "BUY"
+        f_row(1,  "Daily/Weekly BULLISH",              b1)
+        f_row(2,  "4H: HH + HL structure",             b2)
+        f_row(3,  "4H resistance broken (1st HH)",     b3)
+        f_row(4,  "Clean pullback — no new LL",        b4)
+        f_row(5,  "Higher Low (HL) confirmed",         b5)
+        f_row(6,  "2nd resistance break (Cont. HH)",   b6)
+        f_row(7,  "4H / 1H / 15M aligned bullish",     b7)
+        f_row(8,  "15M entry above resistance",        b8)
+    else
+        f_row(1,  "Daily/Weekly BEARISH",              s1)
+        f_row(2,  "4H: LH + LL structure",             s2)
+        f_row(3,  "4H support broken (1st LL)",        s3)
+        f_row(4,  "Clean pullback — no new HH",        s4)
+        f_row(5,  "Lower High (LH) confirmed",         s5)
+        f_row(6,  "2nd support break (Cont. LL)",      s6)
+        f_row(7,  "4H / 1H / 15M aligned bearish",     s7)
+        f_row(8,  "15M entry below support",           s8)
+
+    // Score row
+    table.cell(t, 0, 9,  "Score",
+         text_color=color.new(#8b949e,0), text_size=size.small, bgcolor=color.new(#161b22,0))
+    table.cell(t, 1, 9,  str.tostring(active_score) + " / 8",
+         text_color=color.new(#e6edf3,0), text_size=size.small, bgcolor=color.new(#161b22,0))
+
+    // Grade row
+    table.cell(t, 0, 10, "Grade",
+         text_color=color.new(#8b949e,0), text_size=size.normal, bgcolor=color.new(#161b22,0))
+    table.cell(t, 1, 10, "  " + grade + "  ",
+         text_color=color.new(#0d1117,0), text_size=size.large,
+         bgcolor=grade_color)
+
+    // Key row
+    table.cell(t, 0, 11, "A=All | B=6-7 | C=4-5 | D=<4",
+         text_color=color.new(#484f58,0), text_size=size.tiny,
+         text_halign=text.align_left, bgcolor=color.new(#0d1117,10))
+    table.merge_cells(t, 0, 11, 1, 11)
+
+    // Invalidation warning if D
+    if grade == "D"
+        table.cell(t, 0, 12, "⛔  NO TRADE — conditions not met",
+             text_color=color.new(#f44336,0), text_size=size.small,
+             text_halign=text.align_left, bgcolor=color.new(#1a0000,0))
+        table.merge_cells(t, 0, 12, 1, 12)
+    else
+        table.cell(t, 0, 12, "", bgcolor=color.new(#0d1117,10))
+        table.merge_cells(t, 0, 12, 1, 12)
+
+// ─────────────────────────────────────────────
+//  GRADE LABEL ON CHART (last bar)
+// ─────────────────────────────────────────────
+if barstate.islast
+    lbl_txt  = dir + " — Grade " + grade + " (" + str.tostring(active_score) + "/8)"
+    lbl_style = label.style_label_left
+    label.new(bar_index, high * 1.001,
+         text      = lbl_txt,
+         color     = grade_color,
+         textcolor = color.new(#0d1117, 0),
+         style     = lbl_style,
+         size      = size.normal)
+
+// ─────────────────────────────────────────────
+//  ALERTS
+// ─────────────────────────────────────────────
+
+// Fire once when grade reaches A or B (score crosses threshold)
+alertcondition(dir == "BUY"  and buy_score  >= 6, "🟢 BUY Grade A/B",  "ICC BUY setup graded A/B — review entry conditions.")
+alertcondition(dir == "SELL" and sell_score >= 6, "🔴 SELL Grade A/B", "ICC SELL setup graded A/B — review entry conditions.")
+alertcondition(dir == "BUY"  and buy_score  == 8, "🟢 BUY Grade A (Perfect)", "ICC BUY — ALL conditions met. Grade A setup.")
+alertcondition(dir == "SELL" and sell_score == 8, "🔴 SELL Grade A (Perfect)", "ICC SELL — ALL conditions met. Grade A setup.")
